@@ -11,9 +11,11 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
+import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import android.widget.Button
@@ -52,36 +54,58 @@ class DynamicNotchOverlay(
     private val rootView = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
+        isClickable = true
+        isFocusable = false
     }
 
     // Morphing Pill Container - ENCLOSES ALL NOTCH CONTENT COMPLETELY
     private val pillContainer = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
+        isClickable = true
+        isFocusable = false
     }
 
     // Top Header Row (always top of pill)
     private val headerRow = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER
+        isClickable = false
+        isFocusable = false
     }
-    private val appIconView = ImageView(context)
-    private val primaryTextView = TextView(context)
-    private val secondaryTextView = TextView(context)
+    private val appIconView = ImageView(context).apply {
+        isClickable = false
+        isFocusable = false
+    }
+    private val primaryTextView = TextView(context).apply {
+        isClickable = false
+        isFocusable = false
+    }
+    private val secondaryTextView = TextView(context).apply {
+        isClickable = false
+        isFocusable = false
+    }
 
     // Expanded Multi-Page Carousel Container (inside pill)
     private val carouselContainer = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
         visibility = View.GONE
+        isClickable = false
+        isFocusable = false
     }
 
     // Page 0: Usage Details
     private val pageUsageLayout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
+        isClickable = false
+        isFocusable = false
     }
-    private val usageSessionTextView = TextView(context)
+    private val usageSessionTextView = TextView(context).apply {
+        isClickable = false
+        isFocusable = false
+    }
     private val usageActionsLayout = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER
@@ -91,32 +115,54 @@ class DynamicNotchOverlay(
     private val pageTasksLayout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
+        isClickable = false
+        isFocusable = false
     }
-    private val tasksHeaderView = TextView(context)
+    private val tasksHeaderView = TextView(context).apply {
+        isClickable = false
+        isFocusable = false
+    }
     private val tasksItemsLayout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.START
+        isClickable = false
+        isFocusable = false
     }
 
     // Page 2: Mindfulness & Reflection
     private val pageReflectionLayout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
+        isClickable = false
+        isFocusable = false
     }
-    private val reflectionHeaderView = TextView(context)
-    private val reflectionQuoteTextView = TextView(context)
+    private val reflectionHeaderView = TextView(context).apply {
+        isClickable = false
+        isFocusable = false
+    }
+    private val reflectionQuoteTextView = TextView(context).apply {
+        isClickable = false
+        isFocusable = false
+    }
 
     // Bottom Navigation Dots & Hint (inside pill)
     private val footerLayout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
+        isClickable = false
+        isFocusable = false
     }
     private val dotsLayout = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER
+        isClickable = false
+        isFocusable = false
     }
     private val dotViews = ArrayList<View>()
-    private val swipeHintTextView = TextView(context)
+    private val swipeHintTextView = TextView(context).apply {
+        isClickable = false
+        isFocusable = false
+    }
 
     // Special Event Layout (for Nudge, Check-in, Assistant)
     private val specialContentLayout = LinearLayout(context).apply {
@@ -125,32 +171,37 @@ class DynamicNotchOverlay(
         visibility = View.GONE
     }
 
+    // ORIGINAL NOTCH VISUAL IDENTITY: Matte Obsidian & Warm Alabaster Outline
     private val backgroundDrawable = GradientDrawable().apply {
         shape = GradientDrawable.RECTANGLE
-        setColor(Color.parseColor("#142907")) // Wise Forest obsidian dark
-        setStroke(dpToPx(1), Color.parseColor("#2D4A18")) // Subtle Wise Lime border
+        setColor(Color.parseColor("#121214")) // Original Matte Obsidian Dark
+        setStroke(dpToPx(1), Color.parseColor("#2C2A28")) // Original Warm Outline
         cornerRadius = dpToPx(24).toFloat()
     }
 
+    private var currentTargetWidth = dpToPx(82)
+    private var currentTargetHeight = dpToPx(28)
+
+    // Touch-optimized LayoutParams with exact pixel dimensions to avoid untrusted touches
     private val layoutParams = WindowManager.LayoutParams(
-        WindowManager.LayoutParams.WRAP_CONTENT,
-        WindowManager.LayoutParams.WRAP_CONTENT,
+        currentTargetWidth,
+        currentTargetHeight,
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         else
             @Suppress("DEPRECATION")
             WindowManager.LayoutParams.TYPE_PHONE,
         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
         PixelFormat.TRANSLUCENT
     ).apply {
         gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-        y = dpToPx(10) // Top offset below cutout/status bar
+        y = dpToPx(8) // Sits neatly in status bar / cutout zone
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
     }
-
-    private var currentTargetWidth = dpToPx(160)
-    private var currentTargetHeight = dpToPx(38)
 
     // Current app context
     private var currentPackage: String = ""
@@ -158,18 +209,20 @@ class DynamicNotchOverlay(
     private var currentSessionMs: Long = 0L
     private var currentTodayMs: Long = 0L
 
-    // Carousel state
+    // Carousel state: 0 = Usage, 1 = Tasks, 2 = Reflection
     private var currentCarouselPage = 0
     private var activeTasks: List<String> = emptyList()
-    private var reflectionQuote: String = "The attention you give something is the life you give it."
+    private val reflectionQuote: String = "The attention you give something is the life you give it."
 
-    // Gesture tracking variables
+    // Gesture tracking variables using absolute screen coordinates
     private var touchStartX = 0f
     private var touchStartY = 0f
     private var touchStartTime = 0L
+    private lateinit var gestureDetector: GestureDetector
 
     init {
         setupViews()
+        setupGestureDetector()
         setupTouchGestures()
     }
 
@@ -178,26 +231,26 @@ class DynamicNotchOverlay(
         pillContainer.setPadding(dpToPx(12), dpToPx(6), dpToPx(12), dpToPx(6))
 
         // App Icon
-        appIconView.layoutParams = LinearLayout.LayoutParams(dpToPx(16), dpToPx(16)).apply {
-            marginEnd = dpToPx(7)
+        appIconView.layoutParams = LinearLayout.LayoutParams(dpToPx(15), dpToPx(15)).apply {
+            marginEnd = dpToPx(6)
         }
         appIconView.visibility = View.GONE
 
-        // Primary Text
+        // Primary Text - Original Warm Alabaster
         primaryTextView.apply {
-            setTextColor(Color.parseColor("#FAF9F6"))
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f)
+            setTextColor(Color.parseColor("#F5F2EB"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             maxLines = 1
             gravity = Gravity.CENTER
         }
 
-        // Secondary Text
+        // Secondary Text - Original Warm Oat / Stone
         secondaryTextView.apply {
-            setTextColor(Color.parseColor("#9FE870")) // Wise Lime
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            setTextColor(Color.parseColor("#9E988F"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f)
             typeface = Typeface.create("sans-serif", Typeface.NORMAL)
-            setPadding(dpToPx(6), 0, 0, 0)
+            setPadding(dpToPx(5), 0, 0, 0)
             maxLines = 1
             gravity = Gravity.CENTER
         }
@@ -211,7 +264,7 @@ class DynamicNotchOverlay(
 
         // 1. Page Usage
         usageSessionTextView.apply {
-            setTextColor(Color.parseColor("#C8D4C0"))
+            setTextColor(Color.parseColor("#C4BEB5"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f)
             gravity = Gravity.CENTER
             setPadding(0, dpToPx(6), 0, dpToPx(8))
@@ -222,7 +275,7 @@ class DynamicNotchOverlay(
         // 2. Page Tasks
         tasksHeaderView.apply {
             text = "TODAY'S PRIORITIES"
-            setTextColor(Color.parseColor("#9FE870"))
+            setTextColor(Color.parseColor("#9E988F"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f)
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             gravity = Gravity.CENTER
@@ -234,19 +287,19 @@ class DynamicNotchOverlay(
         // 3. Page Reflection
         reflectionHeaderView.apply {
             text = "PAUSE & REFLECT"
-            setTextColor(Color.parseColor("#9FE870"))
+            setTextColor(Color.parseColor("#9E988F"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f)
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             gravity = Gravity.CENTER
             setPadding(0, dpToPx(4), 0, dpToPx(4))
         }
         reflectionQuoteTextView.apply {
-            setTextColor(Color.parseColor("#FAF9F6"))
+            setTextColor(Color.parseColor("#DED9CE"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             typeface = Typeface.create("sans-serif", Typeface.ITALIC)
             gravity = Gravity.CENTER
             maxLines = 3
-            setPadding(dpToPx(12), dpToPx(4), dpToPx(12), dpToPx(6))
+            setPadding(dpToPx(14), dpToPx(4), dpToPx(14), dpToPx(6))
         }
         pageReflectionLayout.addView(reflectionHeaderView)
         pageReflectionLayout.addView(reflectionQuoteTextView)
@@ -259,7 +312,7 @@ class DynamicNotchOverlay(
         // Dots & Swipe Hint
         setupDots()
         swipeHintTextView.apply {
-            setTextColor(Color.parseColor("#7A8A74"))
+            setTextColor(Color.parseColor("#7A7670"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.5f)
             gravity = Gravity.CENTER
             setPadding(0, dpToPx(4), 0, dpToPx(2))
@@ -271,8 +324,14 @@ class DynamicNotchOverlay(
         pillContainer.addView(carouselContainer)
         pillContainer.addView(specialContentLayout)
 
-        // ROOT VIEW contains ONLY pillContainer - Everything enclosed inside the pill!
-        rootView.addView(pillContainer)
+        // ROOT VIEW matches dimensions of layoutParams
+        rootView.addView(
+            pillContainer,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
     }
 
     private fun setupDots() {
@@ -286,7 +345,7 @@ class DynamicNotchOverlay(
                 }
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
-                    setColor(if (i == 0) Color.parseColor("#9FE870") else Color.parseColor("#3C4E36"))
+                    setColor(if (i == 0) Color.parseColor("#F5F2EB") else Color.parseColor("#3C3A38"))
                 }
             }
             dotsLayout.addView(dot)
@@ -299,74 +358,131 @@ class DynamicNotchOverlay(
             val dot = dotViews[i]
             val bg = dot.background as? GradientDrawable ?: continue
             if (i == activeIndex) {
-                bg.setColor(Color.parseColor("#9FE870")) // Active Wise Lime
+                bg.setColor(Color.parseColor("#F5F2EB")) // Active Warm Alabaster
             } else {
-                bg.setColor(Color.parseColor("#3C4E36")) // Inactive Forest Subtle
+                bg.setColor(Color.parseColor("#3C3A38")) // Inactive Warm Slate
             }
         }
     }
 
+    private fun setupGestureDetector() {
+        gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent): Boolean = true
+
+            override fun onSingleTapUp(e: MotionEvent): Boolean {
+                onPillTapped()
+                return true
+            }
+
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                onPillTapped()
+                return true
+            }
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if (e1 == null) return false
+                val deltaX = e2.rawX - e1.rawX
+                val deltaY = e2.rawY - e1.rawY
+
+                if (abs(deltaX) > abs(deltaY) && abs(deltaX) > dpToPx(20)) {
+                    if (deltaX < 0) {
+                        // Swipe LEFT -> advance page
+                        if (currentCarouselPage < 2) {
+                            currentCarouselPage++
+                            renderCarouselPage(currentCarouselPage)
+                            return true
+                        }
+                    } else {
+                        // Swipe RIGHT -> go back
+                        if (currentCarouselPage > 0) {
+                            currentCarouselPage--
+                            renderCarouselPage(currentCarouselPage)
+                            return true
+                        }
+                    }
+                } else if (deltaY < -dpToPx(25)) {
+                    // Swipe UP -> collapse
+                    transitionTo(State.COLLAPSED)
+                    return true
+                }
+                return false
+            }
+        })
+    }
+
     private fun setupTouchGestures() {
-        pillContainer.setOnTouchListener { _, event ->
+        val unifiedTouchListener = View.OnTouchListener { _, event ->
+            // Pass to gesture detector first
+            val gestureHandled = gestureDetector.onTouchEvent(event)
+            if (gestureHandled) {
+                return@OnTouchListener true
+            }
+
+            // Fallback manual tracking using absolute raw screen coordinates
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    touchStartX = event.x
-                    touchStartY = event.y
+                    touchStartX = event.rawX
+                    touchStartY = event.rawY
                     touchStartTime = System.currentTimeMillis()
-                    true
+                    true // Claim touch stream
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    true // MUST return true so Android does not cancel touch stream!
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    val deltaX = event.x - touchStartX
-                    val deltaY = event.y - touchStartY
+                    val deltaX = event.rawX - touchStartX
+                    val deltaY = event.rawY - touchStartY
                     val duration = System.currentTimeMillis() - touchStartTime
 
-                    val isTap = abs(deltaX) < dpToPx(14) && abs(deltaY) < dpToPx(14) && duration < 320
+                    val isTap = abs(deltaX) < dpToPx(16) && abs(deltaY) < dpToPx(16) && duration < 400
 
                     if (isTap) {
                         onPillTapped()
                         true
                     } else if (currentState == State.EXPANDED) {
-                        // Gesture swipe detection
-                        if (abs(deltaX) > dpToPx(28) && abs(deltaX) > abs(deltaY)) {
+                        if (abs(deltaX) > dpToPx(24) && abs(deltaX) > abs(deltaY)) {
                             if (deltaX < 0) {
-                                // Swipe LEFT -> next page
+                                // Swipe LEFT
                                 if (currentCarouselPage < 2) {
                                     currentCarouselPage++
                                     renderCarouselPage(currentCarouselPage)
                                 }
                             } else {
-                                // Swipe RIGHT -> previous page
+                                // Swipe RIGHT
                                 if (currentCarouselPage > 0) {
                                     currentCarouselPage--
                                     renderCarouselPage(currentCarouselPage)
                                 }
                             }
                             true
-                        } else if (deltaY < -dpToPx(30)) {
-                            // Swipe UP -> collapse
+                        } else if (deltaY < -dpToPx(25)) {
                             transitionTo(State.COLLAPSED)
                             true
                         } else {
-                            false
+                            true
                         }
                     } else {
-                        false
+                        true
                     }
                 }
 
-                else -> false
+                MotionEvent.ACTION_CANCEL -> {
+                    true
+                }
+
+                else -> true
             }
         }
 
-        rootView.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_OUTSIDE && currentState == State.EXPANDED) {
-                transitionTo(State.COLLAPSED)
-                true
-            } else {
-                false
-            }
-        }
+        pillContainer.setOnTouchListener(unifiedTouchListener)
+        rootView.setOnTouchListener(unifiedTouchListener)
     }
 
     private fun onPillTapped() {
@@ -433,9 +549,6 @@ class DynamicNotchOverlay(
 
     fun updateMindfulContent(tasks: List<String>, quote: String) {
         activeTasks = tasks
-        if (quote.isNotBlank()) {
-            reflectionQuote = quote
-        }
         if (currentState == State.EXPANDED) {
             renderCarouselPage(currentCarouselPage)
         }
@@ -640,7 +753,7 @@ class DynamicNotchOverlay(
                 // Page 0: Usage
                 usageSessionTextView.text = "Current session: ${formatDuration(currentSessionMs)}"
                 setupUsageButtons()
-                swipeHintTextView.text = "Swipe left for tasks & reflection →"
+                swipeHintTextView.text = "Swipe left for priorities & quote →"
             }
             1 -> {
                 // Page 1: Tasks
@@ -648,9 +761,9 @@ class DynamicNotchOverlay(
                 swipeHintTextView.text = "← Usage | Swipe left for reflection →"
             }
             2 -> {
-                // Page 2: Reflection (entirely enclosed in notch)
+                // Page 2: Reflection (enclosed completely inside notch)
                 reflectionQuoteTextView.text = "“$reflectionQuote”"
-                swipeHintTextView.text = "← Tasks | Tap notch to collapse"
+                swipeHintTextView.text = "← Priorities | Tap notch to collapse"
             }
         }
     }
@@ -666,7 +779,7 @@ class DynamicNotchOverlay(
             onInteraction("classify_session", mapOf("package" to currentPackage, "intentional" to false))
             transitionTo(State.COLLAPSED)
         }
-        val dismissBtn = createPillButton("Dismiss", "#1E2B18") {
+        val dismissBtn = createPillButton("Dismiss", "#252422") {
             transitionTo(State.COLLAPSED)
         }
 
@@ -681,10 +794,12 @@ class DynamicNotchOverlay(
         if (activeTasks.isEmpty()) {
             val emptyTv = TextView(context).apply {
                 text = "No open priorities today.\nStay mindful of your presence."
-                setTextColor(Color.parseColor("#B0BEA8"))
+                setTextColor(Color.parseColor("#9E988F"))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f)
                 gravity = Gravity.CENTER
                 setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8))
+                isClickable = false
+                isFocusable = false
             }
             tasksItemsLayout.addView(emptyTv)
         } else {
@@ -695,17 +810,23 @@ class DynamicNotchOverlay(
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
                     setPadding(dpToPx(14), dpToPx(3), dpToPx(14), dpToPx(3))
+                    isClickable = false
+                    isFocusable = false
 
                     val checkIcon = TextView(context).apply {
                         text = "○ "
-                        setTextColor(Color.parseColor("#9FE870"))
+                        setTextColor(Color.parseColor("#9E988F"))
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                        isClickable = false
+                        isFocusable = false
                     }
                     val label = TextView(context).apply {
                         text = taskTitle
-                        setTextColor(Color.parseColor("#FAF9F6"))
+                        setTextColor(Color.parseColor("#F5F2EB"))
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
                         maxLines = 1
+                        isClickable = false
+                        isFocusable = false
                     }
                     addView(checkIcon)
                     addView(label)
@@ -720,10 +841,12 @@ class DynamicNotchOverlay(
 
         val promptText = TextView(context).apply {
             text = "You planned to work on:\n\"$taskTitle\"\nBack to it?"
-            setTextColor(Color.parseColor("#FAF9F6"))
+            setTextColor(Color.parseColor("#F5F2EB"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             gravity = Gravity.CENTER
             setPadding(dpToPx(8), dpToPx(4), dpToPx(8), dpToPx(6))
+            isClickable = false
+            isFocusable = false
         }
         specialContentLayout.addView(promptText)
 
@@ -731,11 +854,11 @@ class DynamicNotchOverlay(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
         }
-        val backBtn = createPillButton("Back to Task", "#2D4A3E") {
+        val backBtn = createPillButton("Back to Task", "#3B5342") {
             onInteraction("nudge_action_return", mapOf("package" to currentPackage))
             transitionTo(State.COLLAPSED)
         }
-        val stayBtn = createPillButton("Stay 5m", "#1E2B18") {
+        val stayBtn = createPillButton("Stay 5m", "#262524") {
             onInteraction("nudge_action_snooze", mapOf("package" to currentPackage))
             transitionTo(State.COLLAPSED)
         }
@@ -749,9 +872,11 @@ class DynamicNotchOverlay(
 
         val question = TextView(context).apply {
             text = "How does your attention feel right now?"
-            setTextColor(Color.parseColor("#FAF9F6"))
+            setTextColor(Color.parseColor("#F5F2EB"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             setPadding(0, dpToPx(4), 0, dpToPx(6))
+            isClickable = false
+            isFocusable = false
         }
         specialContentLayout.addView(question)
 
@@ -781,11 +906,13 @@ class DynamicNotchOverlay(
         specialContentLayout.removeAllViews()
         val quoteView = TextView(context).apply {
             text = "“$quote”"
-            setTextColor(Color.parseColor("#FAF9F6"))
+            setTextColor(Color.parseColor("#DED9CE"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             typeface = Typeface.create("sans-serif", Typeface.ITALIC)
             gravity = Gravity.CENTER
-            setPadding(dpToPx(12), dpToPx(6), dpToPx(12), dpToPx(6))
+            setPadding(dpToPx(14), dpToPx(6), dpToPx(14), dpToPx(6))
+            isClickable = false
+            isFocusable = false
         }
         specialContentLayout.addView(quoteView)
     }
@@ -794,10 +921,12 @@ class DynamicNotchOverlay(
         specialContentLayout.removeAllViews()
         val respView = TextView(context).apply {
             text = message
-            setTextColor(Color.parseColor("#FAF9F6"))
+            setTextColor(Color.parseColor("#F5F2EB"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             gravity = Gravity.CENTER
             setPadding(dpToPx(10), dpToPx(4), dpToPx(10), dpToPx(6))
+            isClickable = false
+            isFocusable = false
         }
         specialContentLayout.addView(respView)
     }
@@ -830,14 +959,17 @@ class DynamicNotchOverlay(
         currentTargetHeight = targetHeight
 
         val animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 320L
+            duration = 300L
             interpolator = DecelerateInterpolator(1.8f)
             addUpdateListener { anim ->
                 val fraction = anim.animatedFraction
                 val currW = (startW + (targetWidth - startW) * fraction).toInt()
                 val currH = (startH + (targetHeight - startH) * fraction).toInt()
 
-                pillContainer.layoutParams = LinearLayout.LayoutParams(currW, currH)
+                // Crucial: update WindowManager.LayoutParams width/height directly so the InputChannel touch bounds match the pill
+                layoutParams.width = currW
+                layoutParams.height = currH
+
                 val radius = (currH / 2f).coerceAtMost(dpToPx(24).toFloat())
                 backgroundDrawable.cornerRadius = radius
 
@@ -855,7 +987,7 @@ class DynamicNotchOverlay(
     private fun createPillButton(text: String, bgColor: String, onClick: () -> Unit): Button {
         return Button(context).apply {
             this.text = text
-            setTextColor(Color.parseColor("#FAF9F6"))
+            setTextColor(Color.parseColor("#F5F2EB"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
             isAllCaps = false
             minHeight = 0

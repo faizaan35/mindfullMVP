@@ -443,7 +443,7 @@ class _DynamicNotchPillState extends State<DynamicNotchPill>
                       const Text(
                         "TODAY'S PRIORITIES",
                         style: TextStyle(
-                          color: AppColors.wiseLime,
+                          color: AppColors.notchTextSecondary,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.6,
@@ -474,7 +474,7 @@ class _DynamicNotchPillState extends State<DynamicNotchPill>
                   const Text(
                     'PAUSE & REFLECT',
                     style: TextStyle(
-                      color: AppColors.wiseLime,
+                      color: AppColors.notchTextSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.8,
@@ -509,7 +509,7 @@ class _DynamicNotchPillState extends State<DynamicNotchPill>
                       width: isActive ? 6 : 4,
                       height: isActive ? 6 : 4,
                       decoration: BoxDecoration(
-                        color: isActive ? AppColors.wiseLime : AppColors.wiseSubtle.withValues(alpha: 0.5),
+                        color: isActive ? AppColors.notchTextPrimary : AppColors.notchBorder,
                         shape: BoxShape.circle,
                       ),
                     );

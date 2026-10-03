@@ -42,12 +42,12 @@ class AppColors {
   static const Color slateBlue = Color(0xFF4A5568);
   static const Color slateBlueLight = Color(0xFFEAEFF5);
 
-  // Dynamic Notch Hardware Colors
-  static const Color notchPillBackground = Color(0xFF163300); // Wise Forest
-  static const Color notchObsidian = Color(0xFF0E1012);
-  static const Color notchBorder = Color(0xFF2C382A);
-  static const Color notchTextPrimary = Color(0xFFFAF9F6);
-  static const Color notchTextSecondary = Color(0xFF9FE870); // Wise Lime
+  // Dynamic Notch Hardware Colors (Original Matte Obsidian & Warm Oat Palette)
+  static const Color notchPillBackground = Color(0xFF131315);
+  static const Color notchObsidian = Color(0xFF121214);
+  static const Color notchBorder = Color(0xFF2D2C30);
+  static const Color notchTextPrimary = Color(0xFFF8F6F0);
+  static const Color notchTextSecondary = Color(0xFF9E988E);
 
   // Functional Status
   static const Color intentionalGreen = Color(0xFF163300);

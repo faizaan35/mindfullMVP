@@ -49,36 +49,103 @@ class _MainShellScreenState extends State<MainShellScreen> {
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        indicatorColor: AppColors.oliveGreen.withValues(alpha: 0.18),
-        surfaceTintColor: Colors.transparent,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.blur_circular_rounded),
-            selectedIcon: Icon(Icons.blur_circular_rounded, color: AppColors.oliveGreen),
-            label: 'Attention',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? AppColors.borderDark : AppColors.wiseBorder,
+              width: 1,
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_rounded),
-            selectedIcon: Icon(Icons.bar_chart_rounded, color: AppColors.oliveGreen),
-            label: 'Analytics',
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 64,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(
+                  index: 0,
+                  label: 'Attention',
+                  icon: Icons.spa_rounded,
+                  isDark: isDark,
+                ),
+                _buildNavItem(
+                  index: 1,
+                  label: 'Analytics',
+                  icon: Icons.bar_chart_rounded,
+                  isDark: isDark,
+                ),
+                _buildNavItem(
+                  index: 2,
+                  label: 'Mindfulness',
+                  icon: Icons.task_alt_rounded,
+                  isDark: isDark,
+                ),
+                _buildNavItem(
+                  index: 3,
+                  label: 'Reflection',
+                  icon: Icons.self_improvement_rounded,
+                  isDark: isDark,
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.check_circle_outline_rounded),
-            selectedIcon: Icon(Icons.check_circle_rounded, color: AppColors.oliveGreen),
-            label: 'Mindfulness',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+  }) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        setState(() {
+          _currentIndex = index;
+        });
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            width: isSelected ? 48 : 36,
+            height: 28,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.wiseLime
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              icon,
+              size: 19,
+              color: isSelected
+                  ? AppColors.wiseForest
+                  : (isDark ? AppColors.textSecondaryDark : AppColors.wiseSubtle),
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.self_improvement_rounded),
-            selectedIcon: Icon(Icons.self_improvement_rounded, color: AppColors.oliveGreen),
-            label: 'Reflection',
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              color: isSelected
+                  ? (isDark ? AppColors.wiseLime : AppColors.wiseForest)
+                  : (isDark ? AppColors.textSecondaryDark : AppColors.wiseSubtle),
+              letterSpacing: -0.2,
+            ),
           ),
         ],
       ),

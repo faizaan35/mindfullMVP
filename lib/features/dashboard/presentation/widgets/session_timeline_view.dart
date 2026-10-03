@@ -18,38 +18,47 @@ class SessionTimelineView extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    if (sessions.isEmpty) {
+    // RULE 11: Only show sessions of at least 5 minutes in Today's Timeline
+    final filteredSessions = sessions
+        .where((s) => s.duration.inMinutes >= 5)
+        .toList();
+
+    if (filteredSessions.isEmpty) {
       return Container(
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(18),
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            color: isDark ? AppColors.borderDark : AppColors.wiseBorder,
           ),
         ),
         child: Center(
           child: Column(
             children: [
               Icon(
-                Icons.hourglass_empty_rounded,
-                size: 28,
-                color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                Icons.hourglass_top_rounded,
+                size: 26,
+                color: isDark ? AppColors.textTertiaryDark : AppColors.wiseSubtle,
               ),
               const SizedBox(height: 8),
               Text(
-                'No recorded sessions yet today',
+                'No focus sessions ≥ 5 minutes yet today',
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.wiseSlate,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Start using apps or launch the overlay to track attention',
+                'Short visits (< 5m) are filtered from the timeline to keep your ledger clean, but are still counted toward your daily total attention balance.',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 11.5,
-                  color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                  height: 1.4,
+                  color: isDark ? AppColors.textTertiaryDark : AppColors.wiseSubtle,
                 ),
               ),
             ],
@@ -58,7 +67,7 @@ class SessionTimelineView extends StatelessWidget {
       );
     }
 
-    final reversedSessions = sessions.reversed.toList();
+    final reversedSessions = filteredSessions.reversed.toList();
 
     return ListView.separated(
       shrinkWrap: true,

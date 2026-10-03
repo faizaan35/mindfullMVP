@@ -76,13 +76,20 @@ class MindfulnessController extends StateNotifier<MindfulnessState> {
       habits: habits,
     );
 
-    // Sync primary pending task to native overlay settings
+    // Sync primary pending task, task list, and reflection quote to native overlay settings
     final topTask = state.primaryPendingTask;
+    final pendingTitles = state.tasks
+        .where((t) => !t.isCompleted)
+        .take(4)
+        .map((t) => t.title)
+        .toList();
     await _overlayService.updateNotchSettings(
       overlayEnabled: true,
       trackedPackages: const [],
       nudgeThreshold: 20,
       currentPrimaryTask: topTask?.title ?? (intention?.intentionText ?? ''),
+      tasks: pendingTitles,
+      reflectionQuote: 'The attention you give something is the life you give it.',
     );
   }
 

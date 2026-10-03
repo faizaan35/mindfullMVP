@@ -194,6 +194,12 @@ class OverlayService : Service() {
         trackedPackages = if (trackedStr.isEmpty()) emptySet() else trackedStr.split(",").toSet()
         nudgeThresholdMinutes = prefs.getInt("nudge_threshold_minutes", 20)
 
+        val tasksStr = prefs.getString("notch_tasks", "") ?: ""
+        val quoteStr = prefs.getString("notch_reflection_quote", "") ?: ""
+        val tasksList = if (tasksStr.isEmpty()) emptyList() else tasksStr.split("|||").filter { it.isNotBlank() }
+        val quote = if (quoteStr.isEmpty()) "The attention you give something is the life you give it." else quoteStr
+        overlay?.updateMindfulContent(tasksList, quote)
+
         if (!overlayEnabled) {
             overlay?.hide()
         } else {

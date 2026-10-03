@@ -29,6 +29,10 @@ class Formatters {
     return DateFormat('EEE, MMM d').format(date);
   }
 
+  static String formatDateShort(DateTime date) {
+    return DateFormat('MMM d').format(date);
+  }
+
   static String formatDateKey(DateTime date) {
     return DateFormat('yyyy-MM-dd').format(date);
   }

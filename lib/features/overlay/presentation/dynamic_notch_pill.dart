@@ -39,6 +39,7 @@ class DynamicNotchPill extends StatefulWidget {
 class _DynamicNotchPillState extends State<DynamicNotchPill>
     with SingleTickerProviderStateMixin {
   late NotchState _currentState;
+  int _expandedPageIndex = 0;
   Timer? _autoCollapseTimer;
 
   // Pulse animation for assistant listening state
@@ -130,6 +131,9 @@ class _DynamicNotchPillState extends State<DynamicNotchPill>
   void _transitionTo(NotchState next) {
     setState(() {
       _currentState = next;
+      if (next == NotchState.expanded) {
+        _expandedPageIndex = 0;
+      }
     });
     _syncPulseController();
     widget.onStateChanged?.call(next);
@@ -353,68 +357,166 @@ class _DynamicNotchPillState extends State<DynamicNotchPill>
         );
 
       case NotchState.expanded:
-        return Padding(
+        return GestureDetector(
           key: const ValueKey('expanded'),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.appName,
-                    style: const TextStyle(
-                      color: AppColors.notchTextPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+          onHorizontalDragEnd: (details) {
+            final vx = details.primaryVelocity ?? 0;
+            if (vx < -120 && _expandedPageIndex < 2) {
+              setState(() => _expandedPageIndex++);
+            } else if (vx > 120 && _expandedPageIndex > 0) {
+              setState(() => _expandedPageIndex--);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (_expandedPageIndex == 0) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.appName,
+                        style: const TextStyle(
+                          color: AppColors.notchTextPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'Today: ${Formatters.formatDuration(widget.todayDuration)}',
+                        style: const TextStyle(
+                          color: AppColors.notchTextSecondary,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
                   ),
                   Text(
-                    'Today: ${Formatters.formatDuration(widget.todayDuration)}',
+                    'Current session: ${Formatters.formatDuration(widget.sessionDuration)}',
                     style: const TextStyle(
                       color: AppColors.notchTextSecondary,
-                      fontSize: 12.5,
+                      fontSize: 12,
                     ),
                   ),
-                ],
-              ),
-              Text(
-                'Current session: ${Formatters.formatDuration(widget.sessionDuration)}',
-                style: const TextStyle(
-                  color: AppColors.notchTextSecondary,
-                  fontSize: 12,
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildPillButton(
+                        label: 'Intentional',
+                        color: AppColors.intentionalGreen,
+                        onTap: () {
+                          widget.onClassifySession?.call(true);
+                          _transitionTo(NotchState.collapsed);
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      _buildPillButton(
+                        label: 'Unintentional',
+                        color: AppColors.unintentionalWarm,
+                        onTap: () {
+                          widget.onClassifySession?.call(false);
+                          _transitionTo(NotchState.collapsed);
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      _buildPillButton(
+                        label: 'Dismiss',
+                        color: const Color(0xFF262529),
+                        onTap: () => _transitionTo(NotchState.collapsed),
+                      ),
+                    ],
+                  ),
+                ] else if (_expandedPageIndex == 1) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.appName,
+                        style: const TextStyle(
+                          color: AppColors.notchTextPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Text(
+                        "TODAY'S PRIORITIES",
+                        style: TextStyle(
+                          color: AppColors.wiseLime,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    widget.activeTaskTitle != null
+                        ? '○ ${widget.activeTaskTitle}'
+                        : 'No open priorities today.\nStay mindful of your presence.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.notchTextPrimary,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   _buildPillButton(
-                    label: 'Intentional',
-                    color: AppColors.intentionalGreen,
+                    label: 'Return to Focus',
+                    color: AppColors.oliveGreen,
                     onTap: () {
-                      widget.onClassifySession?.call(true);
+                      widget.onBackToTask?.call();
                       _transitionTo(NotchState.collapsed);
                     },
                   ),
-                  const SizedBox(width: 8),
-                  _buildPillButton(
-                    label: 'Unintentional',
-                    color: AppColors.unintentionalWarm,
-                    onTap: () {
-                      widget.onClassifySession?.call(false);
-                      _transitionTo(NotchState.collapsed);
-                    },
+                ] else ...[
+                  const Text(
+                    'PAUSE & REFLECT',
+                    style: TextStyle(
+                      color: AppColors.wiseLime,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      '“${widget.reflectionQuote ?? 'The attention you give something is the life you give it.'}”',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.notchTextPrimary,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
                   _buildPillButton(
-                    label: 'Dismiss',
+                    label: 'Close',
                     color: const Color(0xFF262529),
                     onTap: () => _transitionTo(NotchState.collapsed),
                   ),
                 ],
-              ),
-            ],
+                // Subtle page dots inside the pill
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (index) {
+                    final isActive = index == _expandedPageIndex;
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: isActive ? 6 : 4,
+                      height: isActive ? 6 : 4,
+                      decoration: BoxDecoration(
+                        color: isActive ? AppColors.wiseLime : AppColors.wiseSubtle.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            ),
           ),
         );
 

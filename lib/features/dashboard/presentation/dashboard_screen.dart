@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_colors.dart';
-import '../../../core/utils/formatters.dart';
 import '../../ai_companion/presentation/assistant_sheet.dart';
 import '../../mindfulness/application/mindfulness_controller.dart';
 import '../../mindfulness/presentation/intention_sheet.dart';
 import '../../overlay/application/overlay_controller.dart';
 import '../../overlay/domain/notch_state.dart';
-import '../../overlay/presentation/dynamic_notch_pill.dart';
 import '../../settings/application/settings_controller.dart';
 import '../../settings/presentation/permissions_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
@@ -36,7 +34,6 @@ class DashboardScreen extends ConsumerWidget {
     final usageNotifier = ref.read(usageControllerProvider.notifier);
     final mindfulnessState = ref.watch(mindfulnessControllerProvider);
     final mindfulnessNotifier = ref.read(mindfulnessControllerProvider.notifier);
-    final overlayState = ref.watch(overlayControllerProvider);
     final overlayNotifier = ref.read(overlayControllerProvider.notifier);
     final settingsState = ref.watch(settingsControllerProvider);
 
@@ -44,26 +41,63 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text(
-              _getGreeting(),
-              style: TextStyle(
-                fontSize: 11,
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.wiseForest : AppColors.wiseMint,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? AppColors.wiseLime.withValues(alpha: 0.3) : AppColors.wiseLime,
+                  width: 1.5,
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.spa_rounded,
+                  size: 18,
+                  color: isDark ? AppColors.wiseLime : AppColors.wiseDark,
+                ),
               ),
             ),
-            const SizedBox(height: 1),
-            Text(
-              Formatters.formatDate(DateTime.now()),
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-              ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'AURA CONSCIOUS',
+                      style: TextStyle(
+                        fontSize: 10,
+                        letterSpacing: 1.3,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.wiseLime : AppColors.wiseDark,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.wiseLime,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _getGreeting(),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -76,8 +110,20 @@ class DashboardScreen extends ConsumerWidget {
                 MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
             },
-            icon: const Icon(Icons.tune_rounded),
+            icon: Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceElevatedDark : AppColors.wiseGreyPill,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.tune_rounded,
+                size: 18,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+              ),
+            ),
           ),
+          const SizedBox(width: 6),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -100,96 +146,6 @@ class DashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Dynamic Notch Interactive Sandbox / Live Preview
-              Center(
-                child: Column(
-                  children: [
-                    DynamicNotchPill(
-                      state: overlayState.currentState,
-                      appName: overlayState.activeAppName,
-                      todayDuration: usageState.dailyStats.totalScreenTime,
-                      sessionDuration: usageState.activeSessionDuration,
-                      activeTaskTitle: mindfulnessState.primaryPendingTask?.title ??
-                          mindfulnessState.todayIntention?.intentionText,
-                      assistantMessage: overlayState.assistantMessage,
-                      reflectionQuote: overlayState.reflectionQuote,
-                      onStateChanged: (newState) {
-                        overlayNotifier.setNotchState(newState);
-                      },
-                      onBackToTask: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Returning to your mindful task.'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      onClassifySession: (isIntentional) {
-                        usageNotifier.classifyCurrentApp(
-                          overlayState.activeAppName,
-                          isIntentional,
-                        );
-                      },
-                      onCheckInResponse: (mood) {
-                        ref.read(mindfulnessControllerProvider.notifier);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Noticed $mood mood. Stay gentle with yourself.'),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    // Quick Notch Test State Selector
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildStateChip(
-                            label: 'Pill',
-                            isSelected: overlayState.currentState == NotchState.collapsed,
-                            onTap: () => overlayNotifier.setNotchState(NotchState.collapsed),
-                            isDark: isDark,
-                          ),
-                          _buildStateChip(
-                            label: 'Detected',
-                            isSelected: overlayState.currentState == NotchState.appDetected,
-                            onTap: () => overlayNotifier.setNotchState(NotchState.appDetected),
-                            isDark: isDark,
-                          ),
-                          _buildStateChip(
-                            label: 'Expanded',
-                            isSelected: overlayState.currentState == NotchState.expanded,
-                            onTap: () => overlayNotifier.setNotchState(NotchState.expanded),
-                            isDark: isDark,
-                          ),
-                          _buildStateChip(
-                            label: 'Nudge',
-                            isSelected: overlayState.currentState == NotchState.contextualNudge,
-                            onTap: () => overlayNotifier.setNotchState(NotchState.contextualNudge),
-                            isDark: isDark,
-                          ),
-                          _buildStateChip(
-                            label: 'Check-in',
-                            isSelected: overlayState.currentState == NotchState.checkIn,
-                            onTap: () => overlayNotifier.setNotchState(NotchState.checkIn),
-                            isDark: isDark,
-                          ),
-                          _buildStateChip(
-                            label: 'Reflect',
-                            isSelected: overlayState.currentState == NotchState.reflection,
-                            onTap: () => overlayNotifier.setNotchState(NotchState.reflection),
-                            isDark: isDark,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
 
               // 2. Permission Prompt Banner (if permissions missing)
               if (needsPermission) ...[
@@ -322,26 +278,34 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // 6. Today's Timeline Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'TODAY’S TIMELINE',
-                    style: TextStyle(
-                      fontSize: 11,
-                      letterSpacing: 1.0,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                    ),
-                  ),
-                  Text(
-                    '${usageState.dailyStats.rawSessions.length} sessions',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                    ),
-                  ),
-                ],
+              Builder(
+                builder: (context) {
+                  final focusSessions = usageState.dailyStats.rawSessions
+                      .where((s) => s.duration.inMinutes >= 5)
+                      .toList();
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'TODAY’S TIMELINE',
+                        style: TextStyle(
+                          fontSize: 11,
+                          letterSpacing: 1.0,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                      Text(
+                        '${focusSessions.length} focus sessions (≥ 5m)',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 12),
               SessionTimelineView(
@@ -353,30 +317,6 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 60),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStateChip({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-    required bool isDark,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: FilterChip(
-        label: Text(label, style: const TextStyle(fontSize: 11)),
-        selected: isSelected,
-        visualDensity: VisualDensity.compact,
-        showCheckmark: false,
-        onSelected: (_) => onTap(),
-        selectedColor: AppColors.oliveGreen.withValues(alpha: 0.18),
-        side: BorderSide(
-          color: isSelected
-              ? AppColors.oliveGreen
-              : (isDark ? AppColors.borderDark : AppColors.borderLight),
         ),
       ),
     );

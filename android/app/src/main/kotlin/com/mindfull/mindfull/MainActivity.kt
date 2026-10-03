@@ -104,6 +104,8 @@ class MainActivity : FlutterActivity() {
                         val trackedPackages = call.argument<List<String>>("trackedPackages") ?: emptyList()
                         val nudgeThreshold = call.argument<Int>("nudgeThreshold") ?: 20
                         val currentTask = call.argument<String>("currentPrimaryTask") ?: ""
+                        val tasks = call.argument<List<String>>("tasks") ?: emptyList()
+                        val reflectionQuote = call.argument<String>("reflectionQuote") ?: ""
 
                         val prefs = getSharedPreferences("mindfull_prefs", Context.MODE_PRIVATE)
                         prefs.edit()
@@ -111,6 +113,8 @@ class MainActivity : FlutterActivity() {
                             .putString("tracked_packages", trackedPackages.joinToString(","))
                             .putInt("nudge_threshold_minutes", nudgeThreshold)
                             .putString("current_primary_task", currentTask)
+                            .putString("notch_tasks", tasks.joinToString("|||"))
+                            .putString("notch_reflection_quote", reflectionQuote)
                             .apply()
 
                         val serviceIntent = Intent(this, OverlayService::class.java).apply {

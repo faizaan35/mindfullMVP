@@ -47,6 +47,8 @@ class AndroidOverlayService {
     required List<String> trackedPackages,
     required int nudgeThreshold,
     required String currentPrimaryTask,
+    List<String> tasks = const [],
+    String reflectionQuote = '',
   }) async {
     try {
       await _channel.invokeMethod('updateNotchSettings', {
@@ -54,6 +56,8 @@ class AndroidOverlayService {
         'trackedPackages': trackedPackages,
         'nudgeThreshold': nudgeThreshold,
         'currentPrimaryTask': currentPrimaryTask,
+        'tasks': tasks,
+        'reflectionQuote': reflectionQuote,
       });
     } on PlatformException {
       // Ignored

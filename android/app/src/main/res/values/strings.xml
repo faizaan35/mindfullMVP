@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mindfull</string>
+    <string name="accessibility_service_description">Enables Mindfull to mindfully detect short-form video feeds like Reels and Shorts to help you stay aware of your digital attention.</string>
+    <string name="notification_channel_name">Mindfull Attention Service</string>
+    <string name="notification_channel_desc">Active attention monitoring and floating Dynamic Notch indicator.</string>
+</resources>

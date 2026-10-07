@@ -179,8 +179,8 @@ class DynamicNotchOverlay(
         cornerRadius = dpToPx(24).toFloat()
     }
 
-    private var currentTargetWidth = dpToPx(82)
-    private var currentTargetHeight = dpToPx(28)
+    private var currentTargetWidth = dpToPx(96)
+    private var currentTargetHeight = dpToPx(30)
 
     // Touch-optimized LayoutParams with exact pixel dimensions to avoid untrusted touches
     private val layoutParams = WindowManager.LayoutParams(
@@ -197,7 +197,7 @@ class DynamicNotchOverlay(
         PixelFormat.TRANSLUCENT
     ).apply {
         gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-        y = dpToPx(8) // Sits neatly in status bar / cutout zone
+        y = dpToPx(38) // Positioned directly below the 110px status bar to guarantee 100% touch interception
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
@@ -218,11 +218,9 @@ class DynamicNotchOverlay(
     private var touchStartX = 0f
     private var touchStartY = 0f
     private var touchStartTime = 0L
-    private lateinit var gestureDetector: GestureDetector
 
     init {
         setupViews()
-        setupGestureDetector()
         setupTouchGestures()
     }
 
@@ -365,75 +363,18 @@ class DynamicNotchOverlay(
         }
     }
 
-    private fun setupGestureDetector() {
-        gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onDown(e: MotionEvent): Boolean = true
-
-            override fun onSingleTapUp(e: MotionEvent): Boolean {
-                onPillTapped()
-                return true
-            }
-
-            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                onPillTapped()
-                return true
-            }
-
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                if (e1 == null) return false
-                val deltaX = e2.rawX - e1.rawX
-                val deltaY = e2.rawY - e1.rawY
-
-                if (abs(deltaX) > abs(deltaY) && abs(deltaX) > dpToPx(20)) {
-                    if (deltaX < 0) {
-                        // Swipe LEFT -> advance page
-                        if (currentCarouselPage < 2) {
-                            currentCarouselPage++
-                            renderCarouselPage(currentCarouselPage)
-                            return true
-                        }
-                    } else {
-                        // Swipe RIGHT -> go back
-                        if (currentCarouselPage > 0) {
-                            currentCarouselPage--
-                            renderCarouselPage(currentCarouselPage)
-                            return true
-                        }
-                    }
-                } else if (deltaY < -dpToPx(25)) {
-                    // Swipe UP -> collapse
-                    transitionTo(State.COLLAPSED)
-                    return true
-                }
-                return false
-            }
-        })
-    }
-
     private fun setupTouchGestures() {
         val unifiedTouchListener = View.OnTouchListener { _, event ->
-            // Pass to gesture detector first
-            val gestureHandled = gestureDetector.onTouchEvent(event)
-            if (gestureHandled) {
-                return@OnTouchListener true
-            }
-
-            // Fallback manual tracking using absolute raw screen coordinates
-            when (event.action) {
+            when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     touchStartX = event.rawX
                     touchStartY = event.rawY
                     touchStartTime = System.currentTimeMillis()
-                    true // Claim touch stream
+                    true // Must claim touch stream from WindowManager
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    true // MUST return true so Android does not cancel touch stream!
+                    true
                 }
 
                 MotionEvent.ACTION_UP -> {
@@ -441,36 +382,31 @@ class DynamicNotchOverlay(
                     val deltaY = event.rawY - touchStartY
                     val duration = System.currentTimeMillis() - touchStartTime
 
-                    val isTap = abs(deltaX) < dpToPx(16) && abs(deltaY) < dpToPx(16) && duration < 400
+                    val isTap = abs(deltaX) < dpToPx(18) && abs(deltaY) < dpToPx(18) && duration < 600
 
                     if (isTap) {
                         onPillTapped()
-                        true
                     } else if (currentState == State.EXPANDED) {
-                        if (abs(deltaX) > dpToPx(24) && abs(deltaX) > abs(deltaY)) {
+                        if (abs(deltaX) > abs(deltaY) && abs(deltaX) > dpToPx(20)) {
                             if (deltaX < 0) {
-                                // Swipe LEFT
+                                // Swipe LEFT -> advance page
                                 if (currentCarouselPage < 2) {
                                     currentCarouselPage++
                                     renderCarouselPage(currentCarouselPage)
                                 }
                             } else {
-                                // Swipe RIGHT
+                                // Swipe RIGHT -> go back
                                 if (currentCarouselPage > 0) {
                                     currentCarouselPage--
                                     renderCarouselPage(currentCarouselPage)
                                 }
                             }
-                            true
-                        } else if (deltaY < -dpToPx(25)) {
+                        } else if (deltaY < -dpToPx(20)) {
+                            // Swipe UP -> collapse
                             transitionTo(State.COLLAPSED)
-                            true
-                        } else {
-                            true
                         }
-                    } else {
-                        true
                     }
+                    true
                 }
 
                 MotionEvent.ACTION_CANCEL -> {

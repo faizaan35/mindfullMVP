@@ -6,8 +6,8 @@ import 'app/app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Edge-to-edge immersive system UI mode
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  // True immersive system UI mode - hides status and navigation bars without breaking touch or swipe navigation
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   // Set system UI style (transparent status bar and navigation bar for mindful full-screen feel)
   SystemChrome.setSystemUIOverlayStyle(

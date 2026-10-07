@@ -152,23 +152,29 @@ class AttentionHeroCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.verified_rounded,
-                          size: 16,
-                          color: isDark ? AppColors.wiseLime : AppColors.wiseDark,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Conscious rate: $intentionalPct% intentional',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : AppColors.wiseDark,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.verified_rounded,
+                            size: 16,
+                            color: isDark ? AppColors.wiseLime : AppColors.wiseDark,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Conscious rate: $intentionalPct% intentional',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? Colors.white : AppColors.wiseDark,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

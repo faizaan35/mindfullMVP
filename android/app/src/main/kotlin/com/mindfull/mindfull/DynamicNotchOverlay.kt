@@ -10,6 +10,7 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.Gravity
@@ -193,12 +194,15 @@ class DynamicNotchOverlay(
             WindowManager.LayoutParams.TYPE_PHONE,
         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
         PixelFormat.TRANSLUCENT
     ).apply {
         gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-        y = dpToPx(38) // Positioned directly below the 110px status bar to guarantee 100% touch interception
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        y = dpToPx(10) // Top-center occupying the system cutout / status bar area
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
     }
@@ -370,6 +374,7 @@ class DynamicNotchOverlay(
                     touchStartX = event.rawX
                     touchStartY = event.rawY
                     touchStartTime = System.currentTimeMillis()
+                    Log.d("DynamicNotchOverlay", "ACTION_DOWN: rawX=$touchStartX, rawY=$touchStartY, state=$currentState")
                     true // Must claim touch stream from WindowManager
                 }
 
@@ -383,6 +388,7 @@ class DynamicNotchOverlay(
                     val duration = System.currentTimeMillis() - touchStartTime
 
                     val isTap = abs(deltaX) < dpToPx(18) && abs(deltaY) < dpToPx(18) && duration < 600
+                    Log.d("DynamicNotchOverlay", "ACTION_UP: deltaX=$deltaX, deltaY=$deltaY, duration=$duration, isTap=$isTap, state=$currentState")
 
                     if (isTap) {
                         onPillTapped()
@@ -392,17 +398,20 @@ class DynamicNotchOverlay(
                                 // Swipe LEFT -> advance page
                                 if (currentCarouselPage < 2) {
                                     currentCarouselPage++
+                                    Log.d("DynamicNotchOverlay", "Carousel swipe LEFT to page $currentCarouselPage")
                                     renderCarouselPage(currentCarouselPage)
                                 }
                             } else {
                                 // Swipe RIGHT -> go back
                                 if (currentCarouselPage > 0) {
                                     currentCarouselPage--
+                                    Log.d("DynamicNotchOverlay", "Carousel swipe RIGHT to page $currentCarouselPage")
                                     renderCarouselPage(currentCarouselPage)
                                 }
                             }
                         } else if (deltaY < -dpToPx(20)) {
                             // Swipe UP -> collapse
+                            Log.d("DynamicNotchOverlay", "Swipe UP detected -> collapse")
                             transitionTo(State.COLLAPSED)
                         }
                     }
@@ -546,8 +555,8 @@ class DynamicNotchOverlay(
             }
 
             State.COLLAPSED -> {
-                targetW = dpToPx(82)
-                targetH = dpToPx(28)
+                targetW = dpToPx(86)
+                targetH = dpToPx(34)
                 pillContainer.setPadding(dpToPx(8), dpToPx(4), dpToPx(8), dpToPx(4))
                 headerRow.visibility = View.VISIBLE
                 appIconView.visibility = View.GONE

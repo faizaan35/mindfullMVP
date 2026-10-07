@@ -34,7 +34,6 @@ class _AssistantSheetState extends ConsumerState<AssistantSheet> {
     final isDark = theme.brightness == Brightness.dark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final assistantState = ref.watch(assistantControllerProvider);
-    final assistantNotifier = ref.read(assistantControllerProvider.notifier);
 
     return Container(
       padding: EdgeInsets.fromLTRB(24, 20, 24, bottomInset + 24),
@@ -99,7 +98,7 @@ class _AssistantSheetState extends ConsumerState<AssistantSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Speak or type your goals in natural language. Mindfull parses tasks with deadlines and durations into your day.',
+            'Type your goals in natural language. Mindfull parses tasks with deadlines and durations into your priorities.',
             style: TextStyle(
               fontSize: 13,
               color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -163,7 +162,7 @@ class _AssistantSheetState extends ConsumerState<AssistantSheet> {
           ),
           const SizedBox(height: 16),
 
-          // Input Bar + Tap to Listen
+          // Input Bar + Explicit Add Button
           Row(
             children: [
               Expanded(
@@ -195,21 +194,22 @@ class _AssistantSheetState extends ConsumerState<AssistantSheet> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Mic / Tap-to-listen button
-              IconButton.filled(
+              // Explicit Add / Submit Button
+              FilledButton.icon(
                 onPressed: () {
-                  if (_textController.text.trim().isNotEmpty) {
-                    _submitPrompt(_textController.text.trim());
-                  } else {
-                    assistantNotifier.startListening();
-                    // Simulate spoken input prompt for demonstration
-                    _submitPrompt('Revise calculus for an hour and review database notes');
+                  final text = _textController.text.trim();
+                  if (text.isNotEmpty) {
+                    _submitPrompt(text);
                   }
                 },
-                style: IconButton.styleFrom(
+                style: FilledButton.styleFrom(
                   backgroundColor: AppColors.oliveGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
-                icon: const Icon(Icons.mic_rounded, color: Colors.white),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Add', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               ),
             ],
           ),
